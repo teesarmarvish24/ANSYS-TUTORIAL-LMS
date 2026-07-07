@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
@@ -12,7 +12,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -23,7 +23,6 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: this refreshes the session and must run before any route logic
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -37,7 +36,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Role check for /admin/*
   if (path.startsWith('/admin') && user) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -52,7 +50,6 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Block deactivated students from /dashboard/*
   if (path.startsWith('/dashboard') && user) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -68,4 +65,5 @@ export async function updateSession(request: NextRequest) {
   }
 
   return supabaseResponse;
+}
 }
