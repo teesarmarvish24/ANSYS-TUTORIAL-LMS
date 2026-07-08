@@ -23,6 +23,7 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // IMPORTANT: this refreshes the session and must run before any route logic
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -36,6 +37,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Role check for /admin/*
   if (path.startsWith('/admin') && user) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -50,6 +52,7 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // Block deactivated students from /dashboard/*
   if (path.startsWith('/dashboard') && user) {
     const { data: profile } = await supabase
       .from('profiles')

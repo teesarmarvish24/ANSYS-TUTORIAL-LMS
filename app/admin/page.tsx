@@ -4,6 +4,7 @@ import DashboardShell from '@/components/DashboardShell';
 const NAV_ITEMS = [
   { label: 'Overview', href: '/admin' },
   { label: 'Recordings', href: '/admin/recordings' },
+  { label: 'Assessments', href: '/admin/assessments' },
   { label: 'Students', href: '/admin/students' },
   { label: 'Requests', href: '/admin/requests' },
 ];

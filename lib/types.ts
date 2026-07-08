@@ -46,3 +46,47 @@ export interface Recording {
   created_by: string | null;
   created_at: string;
 }
+
+export type QuestionType = 'mcq' | 'open_ended';
+export type SubmissionStatus = 'submitted' | 'graded';
+
+export interface Assessment {
+  id: string;
+  module_id: string;
+  title: string;
+  description: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface Question {
+  id: string;
+  assessment_id: string;
+  question_text: string;
+  type: QuestionType;
+  options: string[] | null;
+  correct_option_index: number | null;
+  points: number;
+  sort_order: number;
+}
+
+export interface Submission {
+  id: string;
+  assessment_id: string;
+  student_id: string;
+  status: SubmissionStatus;
+  total_score: number | null;
+  max_score: number | null;
+  submitted_at: string;
+  graded_at: string | null;
+}
+
+export interface Answer {
+  id: string;
+  submission_id: string;
+  question_id: string;
+  selected_option_index: number | null;
+  answer_text: string | null;
+  is_correct: boolean | null;
+  points_awarded: number | null;
+}

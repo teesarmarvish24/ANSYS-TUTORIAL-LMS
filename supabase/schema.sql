@@ -86,6 +86,21 @@ alter table modules enable row level security;
 alter table recordings enable row level security;
 alter table activity_log enable row level security;
 
+-- Safe way to check "is this user an admin" WITHOUT causing infinite
+-- recursion (a plain "exists (select ... from profiles where role='admin')"
+-- policy on the profiles table recurses into itself and returns a 500 error).
+create or replace function is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from profiles where id = auth.uid() and role = 'admin'
+  );
+$$;
+
 -- Drop old policies first so this script is safely re-runnable
 drop policy if exists "Students read own profile" on profiles;
 drop policy if exists "Admins read all profiles" on profiles;
@@ -110,31 +125,23 @@ create policy "Students read own profile" on profiles
   for select using (auth.uid() = id);
 
 create policy "Admins read all profiles" on profiles
-  for select using (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  for select using (is_admin());
 
 create policy "Students update own profile" on profiles
   for update using (auth.uid() = id);
 
 create policy "Admins update all profiles" on profiles
-  for update using (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  for update using (is_admin());
 
 -- enrollment_requests
 create policy "Anyone can submit enrollment request" on enrollment_requests
   for insert with check (true);
 
 create policy "Only admins view enrollment requests" on enrollment_requests
-  for select using (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  for select using (is_admin());
 
 create policy "Only admins update enrollment requests" on enrollment_requests
-  for update using (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  for update using (is_admin());
 
 -- modules (any active student or admin can read; only admin can write)
 create policy "Anyone active can read modules" on modules
@@ -146,9 +153,7 @@ create policy "Anyone active can read modules" on modules
   );
 
 create policy "Only admins manage modules" on modules
-  for all using (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  for all using (is_admin());
 
 -- recordings
 create policy "Active students read recordings" on recordings
@@ -160,20 +165,22 @@ create policy "Active students read recordings" on recordings
   );
 
 create policy "Only admins manage recordings" on recordings
-  for all using (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  for all using (is_admin());
 
 -- activity_log
 create policy "Only admins read activity log" on activity_log
-  for select using (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  for select using (is_admin());
 
 create policy "Only admins insert activity log" on activity_log
-  for insert with check (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  for insert with check (is_admin());
+
+-- Grant basic API access to all tables (required for the Data API to serve
+-- them at all -- RLS above still fully controls who can read/write which rows)
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 
 -- ============================================================
 -- SEED DATA: the 3 modules (safe to re-run - won't duplicate)
