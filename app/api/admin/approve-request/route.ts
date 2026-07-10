@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
   // This sends them a Supabase email with a link to set their own password.
   const admin = createAdminClient();
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-    enrollmentRequest.email
+    enrollmentRequest.email,
+    { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/set-password` }
   );
 
   if (inviteError || !invited.user) {
