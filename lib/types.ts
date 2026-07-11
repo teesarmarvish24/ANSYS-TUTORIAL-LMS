@@ -57,6 +57,16 @@ export interface Assessment {
   description: string | null;
   created_by: string | null;
   created_at: string;
+  opens_at: string | null;
+  closes_at: string | null;
+}
+
+export interface ModuleTimeTracking {
+  id: string;
+  student_id: string;
+  module_id: string;
+  total_seconds: number;
+  last_active_at: string;
 }
 
 export interface Question {

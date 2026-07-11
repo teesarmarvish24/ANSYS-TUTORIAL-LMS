@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient, getCurrentProfile } from '@/lib/supabase/server';
 import DashboardShell from '@/components/DashboardShell';
+import TimeTracker from '@/components/TimeTracker';
 
 const NAV_ITEMS = [{ label: 'Overview', href: '/dashboard' }];
 
@@ -33,6 +34,7 @@ export default async function RecordingPage({ params }: { params: { id: string }
 
   return (
     <DashboardShell navItems={NAV_ITEMS} userLabel={profile?.full_name ?? ''}>
+      <TimeTracker moduleId={recording.module_id} />
       <Link
         href={`/dashboard/module/${recording.modules?.slug}`}
         className="text-sm text-navy-700 hover:underline"

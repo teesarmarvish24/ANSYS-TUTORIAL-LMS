@@ -35,6 +35,8 @@ export default function AssessmentsManager({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [moduleId, setModuleId] = useState('');
+  const [opensAt, setOpensAt] = useState('');
+  const [closesAt, setClosesAt] = useState('');
   const [questions, setQuestions] = useState<DraftQuestion[]>([emptyQuestion()]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,8 @@ export default function AssessmentsManager({
     setTitle('');
     setDescription('');
     setModuleId('');
+    setOpensAt('');
+    setClosesAt('');
     setQuestions([emptyQuestion()]);
     setError('');
   }
@@ -117,7 +121,13 @@ export default function AssessmentsManager({
 
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
-      .insert({ title: title.trim(), description: description.trim() || null, module_id: moduleId })
+      .insert({
+        title: title.trim(),
+        description: description.trim() || null,
+        module_id: moduleId,
+        opens_at: opensAt ? new Date(opensAt).toISOString() : null,
+        closes_at: closesAt ? new Date(closesAt).toISOString() : null,
+      })
       .select()
       .single();
 
@@ -185,6 +195,12 @@ export default function AssessmentsManager({
               <div className="min-w-0">
                 <p className="font-medium text-navy-900 truncate">{a.title}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{a.modules?.title}</p>
+                {(a.opens_at || a.closes_at) && (
+                  <p className="text-xs text-navy-500 mt-0.5">
+                    {a.opens_at ? `Opens ${new Date(a.opens_at).toLocaleString()}` : 'Open now'}
+                    {a.closes_at ? ` · Closes ${new Date(a.closes_at).toLocaleString()}` : ''}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
@@ -213,7 +229,7 @@ export default function AssessmentsManager({
       {/* Create form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
             <div className="flex justify-between items-center mb-5">
               <h2 className="text-lg font-bold text-navy-900">New Assessment</h2>
               <button onClick={() => setShowForm(false)} aria-label="Close">
@@ -257,6 +273,33 @@ export default function AssessmentsManager({
                   rows={2}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-navy-900 mb-1">
+                    Opens at (optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={opensAt}
+                    onChange={(e) => setOpensAt(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Leave blank to open immediately.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-navy-900 mb-1">
+                    Closes at (optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={closesAt}
+                    onChange={(e) => setClosesAt(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Leave blank for no deadline.</p>
+                </div>
               </div>
 
               <div className="border-t border-gray-100 pt-5">

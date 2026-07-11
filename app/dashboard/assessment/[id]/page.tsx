@@ -18,6 +18,10 @@ export default async function AssessmentPage({ params }: { params: { id: string 
 
   if (!assessment) notFound();
 
+  const now = new Date();
+  const notYetOpen = assessment.opens_at && new Date(assessment.opens_at) > now;
+  const closed = assessment.closes_at && new Date(assessment.closes_at) < now;
+
   const { data: questions } = await supabase
     .from('questions')
     .select('*')
@@ -52,12 +56,25 @@ export default async function AssessmentPage({ params }: { params: { id: string 
       {assessment.description && <p className="text-gray-500 mt-1">{assessment.description}</p>}
 
       <div className="mt-6">
-        <TakeAssessment
-          assessmentId={params.id}
-          questions={questions ?? []}
-          existingSubmission={existingSubmission ?? null}
-          existingAnswers={existingAnswers}
-        />
+        {(notYetOpen || closed) && !existingSubmission ? (
+          <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center">
+            <p className="font-semibold text-navy-900">
+              {notYetOpen ? 'This assessment is not open yet' : 'This assessment is closed'}
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              {notYetOpen
+                ? `It opens on ${new Date(assessment.opens_at!).toLocaleString()}.`
+                : `It closed on ${new Date(assessment.closes_at!).toLocaleString()}.`}
+            </p>
+          </div>
+        ) : (
+          <TakeAssessment
+            assessmentId={params.id}
+            questions={questions ?? []}
+            existingSubmission={existingSubmission ?? null}
+            existingAnswers={existingAnswers}
+          />
+        )}
       </div>
     </DashboardShell>
   );

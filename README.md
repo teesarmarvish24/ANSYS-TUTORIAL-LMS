@@ -30,28 +30,29 @@ use that exact project. You do NOT need to create a new one.
    - **anon public** key
    - **service_role** key (click "Reveal" — keep this one secret, never share it publicly)
 
-## Step 2 — Re-run the schema (safe, won't break anything)
+## Step 2 — Run the schema migrations
 
-Even though your tables already exist, run this once more to be certain every
-policy and the seed module data is in place:
+Run these in order, each as a fresh query in **SQL Editor**:
 
-1. In that same project, left sidebar → **SQL Editor** → **New query**.
-2. Open the file `supabase/schema.sql` from this project folder, copy its entire
-   contents, and paste into the SQL editor.
-3. Click **Run**. It's written to be safe to run multiple times — it won't
-   duplicate your existing admin account or data.
+1. `supabase/schema.sql` — core tables (safe to re-run, won't touch existing data)
+2. `supabase/assessments_schema.sql` — assessments, questions, submissions, answers
+3. `supabase/scheduling_analytics_schema.sql` — assessment open/close scheduling + time-tracking analytics
 
 ## Step 3 — Set your environment variables
 
 1. In this project folder, find the file `.env.local.example`.
 2. Make a copy of it named exactly `.env.local` (same folder, just remove `.example`).
-3. Open `.env.local` and paste in the 3 values from Step 1:
+3. Open `.env.local` and fill in your real values:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SITE_URL=https://your-live-domain.vercel.app
+NEXT_PUBLIC_WHATSAPP_GROUP_URL=https://chat.whatsapp.com/your-group-invite-code
 ```
+
+Add these same 5 variables in Vercel (Project → Environment Variables) if deploying there.
 
 **Never commit `.env.local` to GitHub or share the service_role key publicly** —
 it has full admin access to your database.
@@ -124,6 +125,22 @@ Node.js installed on your own computer.
 3. Go to `/admin/recordings` → **Add Recording** → paste the URL, select the
    module (FEA / CFD / Advanced FEA), fill in the title/date/description →
    **Save**. It will now appear for all active students under that module.
+
+## Assessments, scheduling, and analytics
+
+- **Admin → Assessments**: create a quiz tied to a module, mixing multiple-choice
+  (auto-graded) and open-ended (you grade manually) questions. Optionally set an
+  **opens at** / **closes at** window — outside that window, students see a
+  locked card and can't open it (enforced both in the UI and at the database
+  level, so it can't be bypassed).
+- **Admin → Assessments → Submissions**: grade open-ended answers; MCQ scoring
+  is automatic.
+- **Admin → Analytics**: shows how long each student has spent actively
+  watching recordings, per module. Time is tracked automatically in the
+  background while a student has a recording open (pauses if they switch tabs).
+- The floating WhatsApp button (bottom-right on every logged-in page) links to
+  `NEXT_PUBLIC_WHATSAPP_GROUP_URL` — update that env var with your real group
+  invite link.
 
 ---
 

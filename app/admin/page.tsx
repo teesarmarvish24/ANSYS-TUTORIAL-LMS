@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { label: 'Overview', href: '/admin' },
   { label: 'Recordings', href: '/admin/recordings' },
   { label: 'Assessments', href: '/admin/assessments' },
+  { label: 'Analytics', href: '/admin/analytics' },
   { label: 'Students', href: '/admin/students' },
   { label: 'Requests', href: '/admin/requests' },
 ];
@@ -39,8 +40,12 @@ export default async function AdminOverview() {
       <p className="text-gray-500 mt-1">A quick snapshot of the programme.</p>
 
       <div className="grid sm:grid-cols-3 gap-5 mt-8">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-white border border-gray-100 rounded-2xl p-6">
+        {stats.map((s, i) => (
+          <div
+            key={s.label}
+            style={{ ['--delay' as any]: `${i * 80}ms` }}
+            className="bg-white border border-gray-100 rounded-2xl p-6 card-hover animate-fade-in-up stagger"
+          >
             <p className="text-3xl font-bold text-navy-900">{s.value}</p>
             <p className="text-sm text-gray-500 mt-1">{s.label}</p>
           </div>

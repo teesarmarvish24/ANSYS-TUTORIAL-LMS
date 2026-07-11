@@ -1,6 +1,6 @@
 import { createClient, getCurrentProfile } from '@/lib/supabase/server';
 import DashboardShell from '@/components/DashboardShell';
-import RequestsManager from '@/components/RequestsManager';
+import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 
 const NAV_ITEMS = [
   { label: 'Overview', href: '/admin' },
@@ -11,18 +11,18 @@ const NAV_ITEMS = [
   { label: 'Requests', href: '/admin/requests' },
 ];
 
-export default async function AdminRequestsPage() {
+export default async function AdminAnalyticsPage() {
   const profile = await getCurrentProfile();
   const supabase = createClient();
 
-  const { data: requests } = await supabase
-    .from('enrollment_requests')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data: modules } = await supabase.from('modules').select('*').order('sort_order');
+  const { data: tracking } = await supabase
+    .from('module_time_tracking')
+    .select('*, profiles(*), modules(*)');
 
   return (
     <DashboardShell navItems={NAV_ITEMS} userLabel={profile?.full_name ?? ''}>
-      <RequestsManager requests={requests ?? []} />
+      <AnalyticsDashboard tracking={(tracking as any) ?? []} modules={modules ?? []} />
     </DashboardShell>
   );
 }

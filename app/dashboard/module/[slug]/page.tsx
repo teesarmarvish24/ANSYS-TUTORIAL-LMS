@@ -2,9 +2,20 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient, getCurrentProfile } from '@/lib/supabase/server';
 import DashboardShell from '@/components/DashboardShell';
-import { PlayCircle, ClipboardList } from 'lucide-react';
+import { PlayCircle, ClipboardList, Lock, Clock } from 'lucide-react';
 
 const NAV_ITEMS = [{ label: 'Overview', href: '/dashboard' }];
+
+function getAssessmentState(opensAt: string | null, closesAt: string | null) {
+  const now = new Date();
+  if (opensAt && new Date(opensAt) > now) {
+    return { locked: true, label: `Opens ${new Date(opensAt).toLocaleDateString()}` };
+  }
+  if (closesAt && new Date(closesAt) < now) {
+    return { locked: true, label: 'Closed' };
+  }
+  return { locked: false, label: null as string | null };
+}
 
 export default async function ModulePage({ params }: { params: { slug: string } }) {
   const profile = await getCurrentProfile();
@@ -72,23 +83,44 @@ export default async function ModulePage({ params }: { params: { slug: string } 
             Assessments
           </h2>
           <div className="space-y-3">
-            {assessments.map((a: any) => (
-              <Link
-                key={a.id}
-                href={`/dashboard/assessment/${a.id}`}
-                className="flex items-center gap-4 bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="bg-navy-700 text-white rounded-lg p-2.5 shrink-0">
-                  <ClipboardList size={20} />
+            {assessments.map((a: any) => {
+              const { locked, label } = getAssessmentState(a.opens_at, a.closes_at);
+              const card = (
+                <div
+                  className={`flex items-center gap-4 border rounded-xl p-4 transition-all ${
+                    locked
+                      ? 'bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed'
+                      : 'bg-white border-gray-100 hover:shadow-md cursor-pointer'
+                  }`}
+                >
+                  <div
+                    className={`rounded-lg p-2.5 shrink-0 ${
+                      locked ? 'bg-gray-300 text-white' : 'bg-navy-700 text-white'
+                    }`}
+                  >
+                    {locked ? <Lock size={20} /> : <ClipboardList size={20} />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-navy-900 truncate">{a.title}</p>
+                    {a.description && (
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">{a.description}</p>
+                    )}
+                    {label && (
+                      <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                        <Clock size={12} /> {label}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-navy-900 truncate">{a.title}</p>
-                  {a.description && (
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">{a.description}</p>
-                  )}
-                </div>
-              </Link>
-            ))}
+              );
+              return locked ? (
+                <div key={a.id}>{card}</div>
+              ) : (
+                <Link key={a.id} href={`/dashboard/assessment/${a.id}`}>
+                  {card}
+                </Link>
+              );
+            })}
           </div>
         </>
       )}

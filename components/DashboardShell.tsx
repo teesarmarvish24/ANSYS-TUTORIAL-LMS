@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, LogOut, GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import WhatsAppButton from '@/components/WhatsAppButton';
 
 interface NavItem {
   label: string;
@@ -104,6 +105,8 @@ export default function DashboardShell({
 
         <main className="flex-1 p-5 sm:p-8">{children}</main>
       </div>
+
+      <WhatsAppButton />
     </div>
   );
 }
