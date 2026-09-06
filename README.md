@@ -85,11 +85,22 @@ Node.js installed on your own computer.
    GitHub account).
 4. Click **"Add New" → "Project"**, then select the GitHub repository you just
    created.
-5. Vercel will ask for **Environment Variables** during setup — enter the same
-   3 values from Step 3 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-   `SUPABASE_SERVICE_ROLE_KEY`).
+5. Vercel will ask for **Environment Variables** during setup — enter all
+   5 values from Step 3 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_WHATSAPP_GROUP_URL`).
+   **Don't skip `NEXT_PUBLIC_SITE_URL`** — invite and password-reset emails use it
+   to build their link, and if it's missing those links will be broken (e.g.
+   pointing at `undefined/set-password`).
 6. Click **Deploy**. Vercel will build and host the site for you, and give you a
-   live URL like `ansys-simulation-mastery.vercel.app`.
+   live URL like `ansys-simulation-mastery.vercel.app`. Once you know this exact
+   URL, go back and set `NEXT_PUBLIC_SITE_URL` to it (e.g.
+   `https://ansys-simulation-mastery.vercel.app`, no trailing slash) if you
+   hadn't already, then redeploy.
+7. In your Supabase project, go to **Authentication → URL Configuration** and
+   set **Site URL** to that same live URL, and add
+   `https://your-live-domain.vercel.app/**` to **Redirect URLs**. Without this,
+   Supabase will reject invite/reset links even if `NEXT_PUBLIC_SITE_URL` is
+   correct.
 
 ---
 
