@@ -1,63 +1,81 @@
 import Link from 'next/link';
-import { Boxes, Waves, Cpu, ArrowRight } from 'lucide-react';
+import { ArrowRight, Boxes, Award, Users, Clock3, Wrench, MessageCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import CourseCard from '@/components/CourseCard';
+import { createClient } from '@/lib/supabase/server';
+import type { Course } from '@/lib/types';
 
-const MODULES = [
+const FEATURES = [
+  {
+    icon: Wrench,
+    title: 'Hands-on, project-based',
+    desc: 'Every module is built around real engineering problems, not just theory slides.',
+  },
   {
     icon: Boxes,
-    title: 'FEA — Finite Element Analysis',
-    description:
-      'Build a rigorous foundation in structural simulation: meshing strategy, boundary conditions, static/linear analysis, and result interpretation in Ansys.',
-    outcomes: [
-      'Set up and mesh real geometries confidently',
-      'Interpret stress, strain, and deformation results',
-      'Validate simulation results against hand calculations',
-    ],
+    title: 'Industry-relevant curriculum',
+    desc: 'FEA, CFD, and Advanced Computational Solid Mechanics, taught the way practising engineers use them.',
   },
   {
-    icon: Waves,
-    title: 'CFD — Computational Fluid Dynamics',
-    description:
-      'Move into fluid systems: turbulence modelling, boundary layer behaviour, and practical CFD workflows for real engineering problems.',
-    outcomes: [
-      'Configure and run fluid flow simulations in Ansys Fluent',
-      'Choose appropriate turbulence models for a given problem',
-      'Post-process and communicate CFD findings clearly',
-    ],
+    icon: Clock3,
+    title: 'Learn at your pace',
+    desc: 'Every class is recorded and stays on your dashboard — revisit any lesson whenever you need to.',
   },
   {
-    icon: Cpu,
-    title: 'Advanced FEA — Computational Solid Mechanics',
-    description:
-      'Go beyond linear-elastic assumptions into nonlinear material behaviour, large deformation, and advanced computational solid mechanics techniques.',
-    outcomes: [
-      'Model nonlinear materials and large-deformation problems',
-      'Apply advanced solver settings and convergence strategies',
-      'Tackle contact, plasticity, and complex loading scenarios',
-    ],
+    icon: Users,
+    title: 'Active learner community',
+    desc: 'Join a WhatsApp community of fellow learners for support, discussion, and accountability.',
   },
+  {
+    icon: Award,
+    title: 'Assignments & group projects',
+    desc: 'Practice what you learn with graded assignments and collaborative group projects.',
+  },
+  {
+    icon: MessageCircle,
+    title: 'Direct instructor feedback',
+    desc: 'Get your assignments and projects graded with real, specific feedback — not just a score.',
+  },
+];
+
+const STEPS = [
+  { step: '1', title: 'Browse courses', desc: 'Explore the catalogue and pick the course that matches your goals.' },
+  { step: '2', title: 'Create an account', desc: 'Sign up in seconds with email or Google.' },
+  { step: '3', title: 'Enroll & pay securely', desc: 'Pay online via Paystack — cards, bank transfer, or USSD.' },
+  { step: '4', title: 'Start learning', desc: 'Get instant access to recordings, assignments, and projects.' },
 ];
 
 const FAQS = [
   {
     q: 'Do I need prior Ansys experience?',
-    a: 'No — the FEA module starts from first principles. Some familiarity with mechanics of materials and basic mechanical engineering concepts is helpful but not required.',
+    a: 'No — the foundational courses start from first principles. Some familiarity with mechanics of materials is helpful but not required.',
   },
   {
-    q: 'How is the programme delivered?',
-    a: 'Live tutorial sessions are recorded and uploaded to your personal learning dashboard, so you can revisit any class at your own pace after enrollment.',
+    q: 'How is each course delivered?',
+    a: 'Live tutorial sessions are recorded and uploaded to your personal learning dashboard, alongside assignments and group projects, so you can learn at your own pace.',
   },
   {
     q: 'How do I enroll?',
-    a: 'Submit a request through the "Request Access" form. Once your commitment fee is confirmed, you will receive your login details by email.',
+    a: 'Create a free account, open the course you want, and pay securely with Paystack. You get access immediately after payment is confirmed.',
   },
   {
-    q: 'Who is this programme for?',
+    q: 'Who is this for?',
     a: 'Mechanical, aerospace, civil, biomedical, and automotive engineering students and professionals who want practical, job-ready simulation skills.',
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = createClient();
+  const { data: courses } = await supabase
+    .from('courses')
+    .select('*')
+    .eq('is_published', true)
+    .order('position', { ascending: true })
+    .limit(6);
+
+  const featuredCourses = (courses ?? []) as Course[];
+
   return (
     <main>
       <Navbar />
@@ -78,7 +96,7 @@ export default function LandingPage() {
         />
         <div className="relative max-w-5xl mx-auto px-5 sm:px-8 py-24 sm:py-32 text-center">
           <p className="uppercase tracking-widest text-navy-300 text-xs sm:text-sm mb-4">
-            Ansys Simulation Mastery
+            Mastermind Learning
           </p>
           <h1 className="text-4xl sm:text-6xl font-bold leading-tight">
             Master{' '}
@@ -92,17 +110,17 @@ export default function LandingPage() {
             Simulation
           </h1>
           <p className="mt-6 text-navy-100 text-base sm:text-lg max-w-2xl mx-auto">
-            A comprehensive programme spanning FEA, CFD, and Advanced Computational
-            Solid Mechanics — designed to take engineering professionals and students
-            from fundamentals to real, practical Ansys competency.
+            Practical, project-based Ansys simulation courses — designed to take
+            engineering professionals and students from fundamentals to real,
+            job-ready competency.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/request-access"
+              href="/courses"
               className="w-full sm:w-auto bg-white text-navy-950 font-semibold px-7 py-3.5 rounded-lg hover:bg-navy-100 transition-colors inline-flex items-center justify-center gap-2"
             >
-              Request Enrollment <ArrowRight size={18} />
+              Browse Courses <ArrowRight size={18} />
             </Link>
             <Link
               href="/login"
@@ -114,8 +132,8 @@ export default function LandingPage() {
 
           <div className="mt-16 grid grid-cols-3 gap-6 max-w-md mx-auto">
             <div>
-              <p className="text-3xl sm:text-4xl font-bold">3</p>
-              <p className="text-navy-300 text-xs sm:text-sm mt-1">Modules</p>
+              <p className="text-3xl sm:text-4xl font-bold">{featuredCourses.length || 3}+</p>
+              <p className="text-navy-300 text-xs sm:text-sm mt-1">Courses</p>
             </div>
             <div>
               <p className="text-3xl sm:text-4xl font-bold">50+</p>
@@ -129,86 +147,70 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Versatility section */}
-      <section id="versatility" className="max-w-7xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold text-navy-900">
-            One Programme. Three Simulation Domains.
-          </h2>
-          <p className="mt-4 text-navy-600">
-            This is what makes the programme versatile — it takes you from structural
-            fundamentals, through fluid systems, to advanced nonlinear solid mechanics,
-            applicable across mechanical, aerospace, civil, biomedical, and automotive
-            engineering.
-          </p>
+      {/* Featured courses */}
+      <section className="max-w-7xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
+        <div className="flex items-end justify-between mb-10">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-navy-900">Our Courses</h2>
+            <p className="mt-3 text-navy-600 max-w-2xl">
+              Pick a course, enroll securely online, and start learning today.
+            </p>
+          </div>
+          <Link
+            href="/courses"
+            className="hidden sm:inline-block text-sm font-semibold text-navy-700 hover:underline whitespace-nowrap"
+          >
+            View all courses →
+          </Link>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MODULES.map((mod) => (
-            <div
-              key={mod.title}
-              className="border border-navy-100 rounded-2xl p-7 hover:shadow-lg transition-shadow bg-white"
-            >
-              <div className="bg-navy-900 text-white w-12 h-12 rounded-xl flex items-center justify-center mb-5">
-                <mod.icon size={22} />
-              </div>
-              <h3 className="font-semibold text-lg text-navy-900">{mod.title}</h3>
-              <p className="text-navy-600 text-sm mt-3">{mod.description}</p>
-              <ul className="mt-4 space-y-2">
-                {mod.outcomes.map((o) => (
-                  <li key={o} className="text-sm text-navy-700 flex gap-2">
-                    <span className="text-navy-400 mt-0.5">•</span>
-                    <span>{o}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+        {featuredCourses.length > 0 ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredCourses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center border border-dashed border-navy-200 rounded-2xl py-16 text-navy-500">
+            Courses are being finalised — check back soon.
+          </div>
+        )}
       </section>
 
-      {/* How it works */}
-      <section className="bg-navy-50 bg-opacity-40 py-20 sm:py-28" style={{ backgroundColor: '#f5f7fa' }}>
-        <div className="max-w-5xl mx-auto px-5 sm:px-8">
+      {/* Features */}
+      <section className="py-20 sm:py-28" style={{ backgroundColor: '#f5f7fa' }}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <h2 className="text-3xl sm:text-4xl font-bold text-navy-900 text-center mb-14">
-            How It Works
+            Why Learn With Us
           </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { step: '1', title: 'Request Access', desc: 'Fill out the enrollment request form.' },
-              { step: '2', title: 'Pay Commitment Fee', desc: 'Confirm your seat with the programme fee.' },
-              { step: '3', title: 'Get Enrolled', desc: 'Receive your personal login details by email.' },
-              { step: '4', title: 'Start Learning', desc: 'Access every class recording on your dashboard.' },
-            ].map((s) => (
-              <div key={s.step} className="text-center">
-                <div className="w-11 h-11 rounded-full bg-navy-900 text-white font-bold flex items-center justify-center mx-auto mb-4">
-                  {s.step}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="bg-white border border-navy-100 rounded-2xl p-7 card-hover">
+                <div className="bg-navy-900 text-white w-12 h-12 rounded-xl flex items-center justify-center mb-5">
+                  <f.icon size={22} />
                 </div>
-                <h3 className="font-semibold text-navy-900">{s.title}</h3>
-                <p className="text-sm text-navy-600 mt-2">{s.desc}</p>
+                <h3 className="font-semibold text-lg text-navy-900">{f.title}</h3>
+                <p className="text-navy-600 text-sm mt-3">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Curriculum */}
-      <section id="curriculum" className="max-w-4xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
-        <h2 className="text-3xl sm:text-4xl font-bold text-navy-900 text-center mb-12">
-          Curriculum Overview
+      {/* How it works */}
+      <section id="how-it-works" className="max-w-5xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
+        <h2 className="text-3xl sm:text-4xl font-bold text-navy-900 text-center mb-14">
+          How It Works
         </h2>
-        <div className="space-y-4">
-          {MODULES.map((mod) => (
-            <details
-              key={mod.title}
-              className="border border-navy-100 rounded-xl p-5 group open:bg-navy-50"
-            >
-              <summary className="font-semibold text-navy-900 cursor-pointer list-none flex justify-between items-center">
-                {mod.title}
-                <span className="text-navy-400 group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <p className="text-navy-600 text-sm mt-3">{mod.description}</p>
-            </details>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {STEPS.map((s) => (
+            <div key={s.step} className="text-center">
+              <div className="w-11 h-11 rounded-full bg-navy-900 text-white font-bold flex items-center justify-center mx-auto mb-4">
+                {s.step}
+              </div>
+              <h3 className="font-semibold text-navy-900">{s.title}</h3>
+              <p className="text-sm text-navy-600 mt-2">{s.desc}</p>
+            </div>
           ))}
         </div>
       </section>
@@ -221,10 +223,7 @@ export default function LandingPage() {
           </h2>
           <div className="space-y-4">
             {FAQS.map((f) => (
-              <details
-                key={f.q}
-                className="border border-navy-700 rounded-xl p-5 group"
-              >
+              <details key={f.q} className="border border-navy-700 rounded-xl p-5 group">
                 <summary className="font-semibold cursor-pointer list-none flex justify-between items-center">
                   {f.q}
                   <span className="text-navy-400 group-open:rotate-45 transition-transform">+</span>
@@ -236,16 +235,20 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-navy-900 text-navy-300 py-10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
-          <p>&copy; {new Date().getFullYear()} Ansys Simulation Mastery. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link href="/login" className="hover:text-white">Login</Link>
-            <Link href="/request-access" className="hover:text-white">Request Access</Link>
-          </div>
-        </div>
-      </footer>
+      {/* Final CTA */}
+      <section className="bg-white py-20 sm:py-24 text-center px-5">
+        <h2 className="text-3xl sm:text-4xl font-bold text-navy-900">
+          Ready to build real simulation skills?
+        </h2>
+        <Link
+          href="/courses"
+          className="inline-flex items-center gap-2 mt-8 bg-navy-950 text-white font-semibold px-8 py-4 rounded-lg hover:bg-navy-800 transition-colors"
+        >
+          Browse Courses <ArrowRight size={18} />
+        </Link>
+      </section>
+
+      <Footer />
     </main>
   );
 }

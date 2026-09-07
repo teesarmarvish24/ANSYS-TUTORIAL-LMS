@@ -5,9 +5,15 @@ import { createClient } from '@/lib/supabase/client';
 
 const HEARTBEAT_SECONDS = 20;
 
-// Silently accumulates time-on-module for analytics. Renders nothing.
+// Silently accumulates today's watch-time for one recording. Renders nothing.
 // Pauses counting when the browser tab is hidden/backgrounded.
-export default function TimeTracker({ moduleId }: { moduleId: string }) {
+export default function TimeTracker({
+  recordingId,
+  courseId,
+}: {
+  recordingId: string;
+  courseId: string;
+}) {
   const activeRef = useRef(true);
 
   useEffect(() => {
@@ -15,6 +21,8 @@ export default function TimeTracker({ moduleId }: { moduleId: string }) {
       activeRef.current = document.visibilityState === 'visible';
     }
     document.addEventListener('visibilitychange', handleVisibility);
+
+    const today = new Date().toISOString().slice(0, 10);
 
     const interval = setInterval(async () => {
       if (!activeRef.current) return;
@@ -26,22 +34,24 @@ export default function TimeTracker({ moduleId }: { moduleId: string }) {
       if (!user) return;
 
       const { data: existing } = await supabase
-        .from('module_time_tracking')
-        .select('total_seconds')
+        .from('recording_time_logs')
+        .select('seconds_watched')
         .eq('student_id', user.id)
-        .eq('module_id', moduleId)
+        .eq('recording_id', recordingId)
+        .eq('log_date', today)
         .maybeSingle();
 
-      const newTotal = (existing?.total_seconds ?? 0) + HEARTBEAT_SECONDS;
+      const newTotal = (existing?.seconds_watched ?? 0) + HEARTBEAT_SECONDS;
 
-      await supabase.from('module_time_tracking').upsert(
+      await supabase.from('recording_time_logs').upsert(
         {
           student_id: user.id,
-          module_id: moduleId,
-          total_seconds: newTotal,
-          last_active_at: new Date().toISOString(),
+          recording_id: recordingId,
+          course_id: courseId,
+          log_date: today,
+          seconds_watched: newTotal,
         },
-        { onConflict: 'student_id,module_id' }
+        { onConflict: 'student_id,recording_id,log_date' }
       );
     }, HEARTBEAT_SECONDS * 1000);
 
@@ -49,7 +59,7 @@ export default function TimeTracker({ moduleId }: { moduleId: string }) {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [moduleId]);
+  }, [recordingId, courseId]);
 
   return null;
 }

@@ -1,102 +1,162 @@
-export type UserRole = 'admin' | 'student';
-export type AccountStatus = 'active' | 'inactive' | 'pending';
-export type RequestStatus = 'pending' | 'approved' | 'rejected';
+export type Role = 'admin' | 'student';
+export type ProfileStatus = 'active' | 'inactive';
+export type EnrollmentStatus = 'active' | 'revoked';
+export type EnrollmentSource = 'payment' | 'admin_grant';
+export type PaymentStatus = 'pending' | 'success' | 'failed';
 
 export interface Profile {
   id: string;
-  full_name: string;
   email: string;
-  role: UserRole;
-  status: AccountStatus;
+  full_name: string | null;
   phone: string | null;
+  role: Role;
+  status: ProfileStatus;
+  avatar_url: string | null;
   created_at: string;
 }
 
-export interface EnrollmentRequest {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  background: string | null;
-  note: string | null;
-  status: RequestStatus;
-  reviewed_by: string | null;
-  reviewed_at: string | null;
-  created_at: string;
-}
-
-export interface Module {
+export interface Course {
   id: string;
   slug: string;
   title: string;
+  subtitle: string | null;
   description: string | null;
-  sort_order: number;
+  level: string;
+  duration_hours: number | null;
+  price_kobo: number;
+  currency: string;
+  thumbnail_url: string | null;
+  is_published: boolean;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseModule {
+  id: string;
+  course_id: string;
+  title: string;
+  position: number;
+  created_at: string;
+}
+
+export interface Enrollment {
+  id: string;
+  user_id: string;
+  course_id: string;
+  status: EnrollmentStatus;
+  source: EnrollmentSource;
+  enrolled_at: string;
+}
+
+export interface Payment {
+  id: string;
+  user_id: string;
+  course_id: string;
+  amount_kobo: number;
+  currency: string;
+  provider: string;
+  reference: string;
+  status: PaymentStatus;
+  paid_at: string | null;
+  created_at: string;
 }
 
 export interface Recording {
   id: string;
-  module_id: string;
+  course_id: string;
+  module_id: string | null;
   title: string;
   description: string | null;
   video_url: string;
-  thumbnail_url: string | null;
   duration_minutes: number | null;
-  class_date: string | null;
-  sort_order: number;
-  created_by: string | null;
+  position: number;
   created_at: string;
 }
 
-export type QuestionType = 'mcq' | 'open_ended';
-export type SubmissionStatus = 'submitted' | 'graded';
-
-export interface Assessment {
+export interface Assignment {
   id: string;
-  module_id: string;
+  course_id: string;
+  module_id: string | null;
   title: string;
-  description: string | null;
-  created_by: string | null;
+  instructions: string | null;
+  attachment_url: string | null;
+  max_score: number;
+  due_at: string | null;
   created_at: string;
-  opens_at: string | null;
-  closes_at: string | null;
 }
 
-export interface ModuleTimeTracking {
+export interface AssignmentSubmission {
   id: string;
+  assignment_id: string;
   student_id: string;
-  module_id: string;
-  total_seconds: number;
-  last_active_at: string;
-}
-
-export interface Question {
-  id: string;
-  assessment_id: string;
-  question_text: string;
-  type: QuestionType;
-  options: string[] | null;
-  correct_option_index: number | null;
-  points: number;
-  sort_order: number;
-}
-
-export interface Submission {
-  id: string;
-  assessment_id: string;
-  student_id: string;
-  status: SubmissionStatus;
-  total_score: number | null;
-  max_score: number | null;
+  content: string | null;
+  attachment_url: string | null;
+  score: number | null;
+  feedback: string | null;
   submitted_at: string;
   graded_at: string | null;
 }
 
-export interface Answer {
+export interface GroupProject {
   id: string;
-  submission_id: string;
-  question_id: string;
-  selected_option_index: number | null;
-  answer_text: string | null;
-  is_correct: boolean | null;
-  points_awarded: number | null;
+  course_id: string;
+  title: string;
+  instructions: string | null;
+  attachment_url: string | null;
+  max_score: number;
+  due_at: string | null;
+  created_at: string;
+}
+
+export interface ProjectGroup {
+  id: string;
+  group_project_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface ProjectGroupMember {
+  group_id: string;
+  student_id: string;
+}
+
+export interface ProjectSubmission {
+  id: string;
+  group_id: string;
+  content: string | null;
+  attachment_url: string | null;
+  score: number | null;
+  feedback: string | null;
+  submitted_by: string | null;
+  submitted_at: string;
+  graded_at: string | null;
+}
+
+export interface Announcement {
+  id: string;
+  course_id: string | null;
+  title: string;
+  body: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface RecordingTimeLog {
+  id: string;
+  student_id: string;
+  recording_id: string;
+  course_id: string;
+  seconds_watched: number;
+  log_date: string;
+}
+
+export interface ActivityLogEntry {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  target_table: string | null;
+  target_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
 }
