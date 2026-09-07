@@ -1,164 +1,128 @@
 import Link from 'next/link';
-import { createClient, getCurrentProfile } from '@/lib/supabase/server';
-import DashboardShell from '@/components/DashboardShell';
-import { PlayCircle, ClipboardList, Lock, Clock, ArrowRight } from 'lucide-react';
+import { BookOpen, ClipboardList, Users2, Megaphone } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import StatCard from '@/components/StatCard';
+import EmptyState from '@/components/EmptyState';
+import CourseCard from '@/components/CourseCard';
+import { formatDate } from '@/lib/format';
+import type { Course } from '@/lib/types';
 
-const NAV_ITEMS = [{ label: 'Overview', href: '/dashboard' }];
-
-function getAssessmentState(opensAt: string | null, closesAt: string | null) {
-  const now = new Date();
-  if (opensAt && new Date(opensAt) > now) {
-    return { locked: true, label: `Opens ${new Date(opensAt).toLocaleDateString()}` };
-  }
-  if (closesAt && new Date(closesAt) < now) {
-    return { locked: true, label: 'Closed' };
-  }
-  return { locked: false, label: null as string | null };
-}
-
-export default async function StudentDashboard() {
-  const profile = await getCurrentProfile();
+export default async function DashboardOverviewPage() {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user!.id)
+    .single();
 
-  const { data: modules } = await supabase
-    .from('modules')
-    .select('*, recordings(id), assessments(*)')
-    .order('sort_order', { ascending: true });
+  const { data: enrollments } = await supabase
+    .from('enrollments')
+    .select('course:courses(*)')
+    .eq('user_id', user!.id)
+    .eq('status', 'active');
 
-  // Flatten recent recordings across all modules (latest 6)
-  const { data: recentRecordings } = await supabase
-    .from('recordings')
-    .select('*, modules(title, slug)')
+  const courses = (enrollments ?? [])
+    .map((e) => e.course)
+    .filter(Boolean) as unknown as Course[];
+  const courseIds = courses.map((c) => c.id);
+
+  const { data: assignments } = courseIds.length
+    ? await supabase
+        .from('assignments')
+        .select('id, title, due_at, course_id')
+        .in('course_id', courseIds)
+        .order('due_at', { ascending: true })
+        .limit(5)
+    : { data: [] };
+
+  const { data: announcements } = await supabase
+    .from('announcements')
+    .select('id, title, created_at')
     .order('created_at', { ascending: false })
-    .limit(6);
-
-  // Flatten all assessments across modules for the Assessments section
-  const allAssessments = (modules ?? []).flatMap((m: any) =>
-    (m.assessments ?? []).map((a: any) => ({ ...a, moduleTitle: m.title, moduleSlug: m.slug }))
-  );
+    .limit(5);
 
   return (
-    <DashboardShell navItems={NAV_ITEMS} userLabel={profile?.full_name ?? ''}>
-      <div className="animate-fade-in-up">
+    <div className="space-y-8">
+      <div>
         <h1 className="text-2xl font-bold text-navy-900">
           Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
         </h1>
-        <p className="text-gray-500 mt-1">Here&apos;s where you left off.</p>
+        <p className="text-navy-500 mt-1">Here&apos;s what&apos;s happening with your learning.</p>
       </div>
 
-      {/* Modules */}
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mt-8 mb-3">
-        Modules
-      </h2>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {(modules ?? []).map((mod: any, i: number) => (
-          <Link
-            key={mod.id}
-            href={`/dashboard/module/${mod.slug}`}
-            style={{ ['--delay' as any]: `${i * 60}ms` }}
-            className="block bg-white border border-gray-100 rounded-2xl p-6 card-hover press-scale animate-fade-in-up stagger"
-          >
-            <h3 className="font-semibold text-navy-900">{mod.title}</h3>
-            <p className="text-sm text-gray-500 mt-2 line-clamp-2">{mod.description}</p>
-            <div className="flex items-center gap-3 mt-4 text-xs text-navy-600 font-medium">
-              <span>{mod.recordings?.length ?? 0} recording{(mod.recordings?.length ?? 0) === 1 ? '' : 's'}</span>
-              {mod.assessments?.length > 0 && (
-                <span className="text-navy-400">· {mod.assessments.length} assessment{mod.assessments.length === 1 ? '' : 's'}</span>
-              )}
-            </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={BookOpen} label="Enrolled courses" value={courses.length} />
+        <StatCard icon={ClipboardList} label="Upcoming assignments" value={assignments?.length ?? 0} />
+        <StatCard icon={Megaphone} label="Recent announcements" value={announcements?.length ?? 0} />
+        <StatCard icon={Users2} label="Group projects" value="View" />
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-navy-900 text-lg">My courses</h2>
+          <Link href="/dashboard/courses" className="text-sm font-semibold text-navy-700 hover:underline">
+            View all →
           </Link>
-        ))}
-
-        {(!modules || modules.length === 0) && (
-          <p className="text-gray-500 text-sm col-span-full">
-            No modules have been set up yet. Check back soon.
-          </p>
-        )}
-      </div>
-
-      {/* Recordings */}
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mt-10 mb-3">
-        Recent Recordings
-      </h2>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(recentRecordings ?? []).map((rec: any, i: number) => (
-          <Link
-            key={rec.id}
-            href={`/dashboard/recording/${rec.id}`}
-            style={{ ['--delay' as any]: `${i * 50}ms` }}
-            className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-4 card-hover press-scale animate-fade-in-up stagger"
-          >
-            <div className="bg-navy-900 text-white rounded-lg p-2.5 shrink-0">
-              <PlayCircle size={18} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-navy-900 truncate">{rec.title}</p>
-              <p className="text-xs text-gray-500 mt-0.5 truncate">{rec.modules?.title}</p>
-            </div>
-          </Link>
-        ))}
-
-        {(!recentRecordings || recentRecordings.length === 0) && (
-          <p className="text-gray-500 text-sm col-span-full">
-            No recordings uploaded yet. Check back after your next class.
-          </p>
-        )}
-      </div>
-
-      {/* Assessments */}
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mt-10 mb-3">
-        Assessments
-      </h2>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {allAssessments.map((a: any, i: number) => {
-          const { locked, label } = getAssessmentState(a.opens_at, a.closes_at);
-          const Card = (
-            <div
-              style={{ ['--delay' as any]: `${i * 50}ms` }}
-              className={`flex items-center gap-3 border rounded-xl p-4 animate-fade-in-up stagger transition-all ${
-                locked
-                  ? 'bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed'
-                  : 'bg-white border-gray-100 card-hover press-scale cursor-pointer'
-              }`}
-            >
-              <div
-                className={`rounded-lg p-2.5 shrink-0 ${
-                  locked ? 'bg-gray-300 text-white' : 'bg-navy-700 text-white'
-                }`}
+        </div>
+        {courses.length > 0 ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {courses.slice(0, 3).map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={BookOpen}
+            title="You're not enrolled in any course yet"
+            description="Browse the catalogue and enroll in a course to get started."
+            action={
+              <Link
+                href="/courses"
+                className="inline-block bg-navy-950 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-navy-800"
               >
-                {locked ? <Lock size={18} /> : <ClipboardList size={18} />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-navy-900 truncate">{a.title}</p>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">{a.moduleTitle}</p>
-                {label && (
-                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                    <Clock size={12} /> {label}
-                  </p>
-                )}
-              </div>
-              {!locked && <ArrowRight size={16} className="text-navy-400 shrink-0" />}
-            </div>
-          );
-
-          return locked ? (
-            <div key={a.id} aria-disabled="true">
-              {Card}
-            </div>
-          ) : (
-            <Link key={a.id} href={`/dashboard/assessment/${a.id}`}>
-              {Card}
-            </Link>
-          );
-        })}
-
-        {allAssessments.length === 0 && (
-          <p className="text-gray-500 text-sm col-span-full">
-            No assessments available yet. They&apos;ll appear here as soon as your instructor
-            adds one.
-          </p>
+                Browse courses
+              </Link>
+            }
+          />
         )}
       </div>
-    </DashboardShell>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="bg-white border border-navy-100 rounded-2xl p-6">
+          <h2 className="font-semibold text-navy-900 mb-4">Upcoming assignments</h2>
+          {assignments && assignments.length > 0 ? (
+            <ul className="space-y-3">
+              {assignments.map((a) => (
+                <li key={a.id} className="flex items-center justify-between text-sm">
+                  <span className="text-navy-800">{a.title}</span>
+                  <span className="text-navy-500">{formatDate(a.due_at)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-navy-500">No assignments due right now.</p>
+          )}
+        </div>
+
+        <div className="bg-white border border-navy-100 rounded-2xl p-6">
+          <h2 className="font-semibold text-navy-900 mb-4">Latest announcements</h2>
+          {announcements && announcements.length > 0 ? (
+            <ul className="space-y-3">
+              {announcements.map((a) => (
+                <li key={a.id} className="flex items-center justify-between text-sm">
+                  <span className="text-navy-800">{a.title}</span>
+                  <span className="text-navy-500">{formatDate(a.created_at)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-navy-500">No announcements yet.</p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

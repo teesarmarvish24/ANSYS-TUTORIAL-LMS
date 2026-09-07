@@ -1,56 +1,73 @@
-import { createClient, getCurrentProfile } from '@/lib/supabase/server';
-import DashboardShell from '@/components/DashboardShell';
+import Link from 'next/link';
+import { Users, BookOpen, Wallet, ClipboardCheck } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import StatCard from '@/components/StatCard';
+import { formatNaira, formatDateTime } from '@/lib/format';
 
-const NAV_ITEMS = [
-  { label: 'Overview', href: '/admin' },
-  { label: 'Recordings', href: '/admin/recordings' },
-  { label: 'Assessments', href: '/admin/assessments' },
-  { label: 'Analytics', href: '/admin/analytics' },
-  { label: 'Students', href: '/admin/students' },
-  { label: 'Requests', href: '/admin/requests' },
-];
-
-export default async function AdminOverview() {
-  const profile = await getCurrentProfile();
+export default async function AdminOverviewPage() {
   const supabase = createClient();
 
-  const [{ count: activeStudents }, { count: pendingRequests }, { count: totalRecordings }] =
-    await Promise.all([
-      supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'student')
-        .eq('status', 'active'),
-      supabase
-        .from('enrollment_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending'),
-      supabase.from('recordings').select('*', { count: 'exact', head: true }),
-    ]);
+  const [
+    { count: studentCount },
+    { count: courseCount },
+    { count: ungradedCount },
+    { data: payments },
+    { data: recentStudents },
+  ] = await Promise.all([
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+    supabase.from('courses').select('id', { count: 'exact', head: true }),
+    supabase
+      .from('assignment_submissions')
+      .select('id', { count: 'exact', head: true })
+      .is('graded_at', null),
+    supabase.from('payments').select('amount_kobo').eq('status', 'success'),
+    supabase
+      .from('profiles')
+      .select('id, full_name, email, created_at')
+      .eq('role', 'student')
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ]);
 
-  const stats = [
-    { label: 'Active Students', value: activeStudents ?? 0 },
-    { label: 'Pending Requests', value: pendingRequests ?? 0 },
-    { label: 'Total Recordings', value: totalRecordings ?? 0 },
-  ];
+  const totalRevenue = (payments ?? []).reduce((sum, p) => sum + p.amount_kobo, 0);
 
   return (
-    <DashboardShell navItems={NAV_ITEMS} userLabel={profile?.full_name ?? ''}>
-      <h1 className="text-2xl font-bold text-navy-900">Admin Overview</h1>
-      <p className="text-gray-500 mt-1">A quick snapshot of the programme.</p>
-
-      <div className="grid sm:grid-cols-3 gap-5 mt-8">
-        {stats.map((s, i) => (
-          <div
-            key={s.label}
-            style={{ ['--delay' as any]: `${i * 80}ms` }}
-            className="bg-white border border-gray-100 rounded-2xl p-6 card-hover animate-fade-in-up stagger"
-          >
-            <p className="text-3xl font-bold text-navy-900">{s.value}</p>
-            <p className="text-sm text-gray-500 mt-1">{s.label}</p>
-          </div>
-        ))}
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-navy-900">Admin Overview</h1>
+        <p className="text-navy-500 mt-1">A snapshot of the whole programme.</p>
       </div>
-    </DashboardShell>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={Users} label="Students" value={studentCount ?? 0} />
+        <StatCard icon={BookOpen} label="Courses" value={courseCount ?? 0} />
+        <StatCard icon={Wallet} label="Total revenue" value={formatNaira(totalRevenue)} />
+        <StatCard icon={ClipboardCheck} label="Submissions to grade" value={ungradedCount ?? 0} />
+      </div>
+
+      <div className="bg-white border border-navy-100 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-navy-900">Recently joined students</h2>
+          <Link href="/admin/students" className="text-sm font-semibold text-navy-700 hover:underline">
+            View all →
+          </Link>
+        </div>
+        {recentStudents && recentStudents.length > 0 ? (
+          <ul className="divide-y divide-navy-50">
+            {recentStudents.map((s) => (
+              <li key={s.id} className="flex items-center justify-between py-3 text-sm">
+                <div>
+                  <p className="text-navy-900 font-medium">{s.full_name ?? 'Unnamed'}</p>
+                  <p className="text-navy-500 text-xs">{s.email}</p>
+                </div>
+                <span className="text-navy-500">{formatDateTime(s.created_at)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-navy-500">No students yet.</p>
+        )}
+      </div>
+    </div>
   );
 }

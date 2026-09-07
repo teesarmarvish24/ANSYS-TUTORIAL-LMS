@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { Menu, X, GraduationCap } from 'lucide-react';
 
 const NAV_LINKS = [
-  { label: 'Home', href: '#hero' },
-  { label: 'Programme', href: '#versatility' },
-  { label: 'Curriculum', href: '#curriculum' },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'Home', href: '/#hero' },
+  { label: 'Courses', href: '/courses' },
+  { label: 'How it works', href: '/#how-it-works' },
+  { label: 'FAQ', href: '/#faq' },
 ];
 
 export default function Navbar() {
@@ -27,7 +27,6 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((link) => (
             <a
@@ -38,21 +37,17 @@ export default function Navbar() {
               {link.label}
             </a>
           ))}
-          <Link
-            href="/login"
-            className="text-sm text-navy-100 hover:text-white transition-colors"
-          >
+          <Link href="/login" className="text-sm text-navy-100 hover:text-white transition-colors">
             Login
           </Link>
           <Link
-            href="/request-access"
+            href="/signup"
             className="bg-white text-navy-950 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-navy-100 transition-colors"
           >
-            Request Access
+            Get Started
           </Link>
         </div>
 
-        {/* Hamburger button (mobile only) */}
         <button
           type="button"
           aria-label={open ? 'Close menu' : 'Open menu'}
@@ -64,7 +59,6 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile slide-down menu */}
       {open && (
         <div className="md:hidden bg-navy-950 border-t border-navy-800 px-5 py-4 flex flex-col gap-1">
           {NAV_LINKS.map((link) => (
@@ -85,11 +79,11 @@ export default function Navbar() {
             Login
           </Link>
           <Link
-            href="/request-access"
+            href="/signup"
             onClick={() => setOpen(false)}
             className="bg-white text-navy-950 font-semibold text-center px-4 py-3 rounded-lg mt-3"
           >
-            Request Access
+            Get Started
           </Link>
         </div>
       )}
